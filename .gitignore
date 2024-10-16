@@ -1,5 +1,6 @@
+.venv
+
+data/
+samples/
 *.vscode/
 __pycache__/
-
-samples/
-data/
