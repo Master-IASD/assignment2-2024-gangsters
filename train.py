@@ -65,6 +65,8 @@ if __name__ == '__main__':
     G_optimizer = optim.Adam(G.parameters(), lr = args.lr)
     D_optimizer = optim.Adam(D.parameters(), lr = args.lr)
 
+    print("device", torch.cuda.current_device())
+
     print('Start Training :')
     
     n_epoch = args.epochs
