@@ -7,8 +7,9 @@ import torch.nn as nn
 import torch.optim as optim
 
 
+
 from model import Generator, Discriminator
-from utils import D_train, G_train, save_models
+from utils import D_train, G_train, save_models, weights_init
 
 
 
@@ -21,6 +22,7 @@ if __name__ == '__main__':
                       help="The learning rate to use for training.")
     parser.add_argument("--batch_size", type=int, default=64, 
                         help="Size of mini-batches for SGD")
+    parser.add_argument("--device", type=str, default='cpu')
 
     args = parser.parse_args()
 
@@ -48,18 +50,16 @@ if __name__ == '__main__':
 
     print('Model Loading...')
     mnist_dim = 784
-    G = torch.nn.DataParallel(Generator(g_output_dim = mnist_dim)).cuda()
-    D = torch.nn.DataParallel(Discriminator(mnist_dim)).cuda()
+    G = torch.nn.DataParallel(Generator(g_output_dim = mnist_dim)).to(args.device)
+    D = torch.nn.DataParallel(Discriminator(mnist_dim)).to(args.device)
 
+    G.apply(weights_init)
+    D.apply(weights_init)
 
     # model = DataParallel(model).cuda()
     print('Model loaded.')
     # Optimizer 
-
-
-
-    # define loss
-    criterion = nn.BCELoss() 
+    
 
     # define optimizers
     G_optimizer = optim.Adam(G.parameters(), lr = args.lr)
@@ -71,11 +71,15 @@ if __name__ == '__main__':
     for epoch in trange(1, n_epoch+1, leave=True):           
         for batch_idx, (x, _) in enumerate(train_loader):
             x = x.view(-1, mnist_dim)
-            D_train(x, G, D, D_optimizer, criterion)
-            G_train(x, G, D, G_optimizer, criterion)
+            Dloss= D_train(args, x, G, D, D_optimizer)
+            Gloss = G_train(args, x, G, D, G_optimizer)
+            
+        print(f'Epoch: {epoch}, D_loss: {Dloss}, G_loss: {Gloss}')
+            
 
         if epoch % 10 == 0:
             save_models(G, D, 'checkpoints')
+            
                 
     print('Training done')
 
