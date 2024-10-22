@@ -10,7 +10,8 @@ import torch.optim as optim
 from model import Generator, Discriminator
 from utils import D_train, G_train, save_models
 
-
+# additional imports
+from PIL import Image
 
 
 if __name__ == '__main__':

@@ -4,3 +4,5 @@ data/
 samples/
 *.vscode/
 __pycache__/
+
+real_images/
