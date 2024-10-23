@@ -16,3 +16,10 @@ When your code will be test, we will execute:
 ## Checkpoints
 Push the minimal amount of models in the folder *checkpoints*.
 
+
+## Computing the FID and Precision / Recall Score :
+Those scores are calculated based on the github repos provided by the teachers.
+for the FID Score :
+  > python3 -m pytorch_fid real_images samples --device cuda:0
+for the Precision / Recall Score :
+  > python3 improved_precision_recall.py real_images samples
