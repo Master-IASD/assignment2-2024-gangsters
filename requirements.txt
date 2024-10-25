@@ -7,3 +7,8 @@ torchvision==0.15.2
 
 # requirement for PIL
 Pillow==10.4.0
+matplotlib==3.9.2
+datetime==4.3.0
+
+# DateTime handling library
+python-dateutil==2.8.2  # datetime library helper
