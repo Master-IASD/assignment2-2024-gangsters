@@ -54,4 +54,3 @@ class PerceptualLoss(nn.Module):
             perceptual_loss += self.criterion(gen_feat, real_feat)
         
         return perceptual_loss
-

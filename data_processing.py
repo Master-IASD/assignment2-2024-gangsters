@@ -1,53 +1,32 @@
-# import libraries
-import os
-import torch
-from PIL import Image
-from torchvision import datasets, transforms
-
-from utils import load_model, observe_latent_space_color
 from model import Generator
-
-# Directory where the raw MNIST dataset will be downloaded
-os.makedirs('data', exist_ok=True)
-
-print("Loading MNIST dataset...")
-transform = transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Normalize(mean=(0.5), std=(0.5))])
-
-train_dataset = datasets.MNIST(root='data/MNIST/', train=True, transform=transform, download=True)
-
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=64, shuffle=True)
-
-
-
-# ===================== Saving the MNIST images in .png format =====================
-# Saving the original images in .png format to compute the FID score
-# print("Saving MNIST images in .png format...")
-
-# # Directory where the real images will be saved
-# real_images_dir = "real_images"
-# os.makedirs(real_images_dir, exist_ok=True)
-
-# # Save MNIST images as .png files
-# for i, (image, _) in enumerate(train_dataset):
-#     img = transforms.ToPILImage()(image) 
-#     img.save(f"{real_images_dir}/mnist_{i}.png")
-
-# print(f"Saved {i + 1} real MNIST images to {real_images_dir}")
-
-
+from processing.classifier import Classifier
+from processing.utils_process import *
+from torchvision.utils import make_grid, save_image
 
 # ===================== Observing the Latent Space =====================
 print('Model Loading...')
 # Model Pipeline
 mnist_dim = 784
+latent_dim = 100
 
-model = Generator(g_output_dim = mnist_dim).cuda()
-model = load_model(model, 'checkpoints')
-model = torch.nn.DataParallel(model).cuda()
-model.eval()
-
+generator = Generator(g_output_dim = mnist_dim).cuda()
+classifier = Classifier().cuda()
+generator, classifier = load_model(generator, classifier, 'checkpoints')
 print('Model loaded.')
 
-observe_latent_space_color(model, train_loader, n_samples=1000, method='pca')
+# Observing the latent space
+latent_vector, predicted_labels, original_noise = analyze_latent_space(generator, classifier, latent_dim, n_samples=2000, lr=0.1, n_steps=2000)
+
+# Visualizing the latent space
+visualize_latent_space(latent_vector, predicted_labels, latent_dim, original_noise, method='tsne')
+
+#Sample from new latent_vector
+z_update = torch.from_numpy(latent_vector[:16, :]).cuda()
+with torch.no_grad():
+    grid = make_grid(generator(z_update).view(-1, 1, 28, 28).cpu(), nrow=4, normalize=True)
+    save_image(grid, f'images/predictions/new_pred.png')
+
+original_noise = torch.from_numpy(original_noise).cuda()
+with torch.no_grad():
+    grid = make_grid(generator(original_noise[:16, :]).view(-1, 1, 28, 28).cpu(), nrow=4, normalize=True)
+    save_image(grid, f'images/predictions/original_pred.png')

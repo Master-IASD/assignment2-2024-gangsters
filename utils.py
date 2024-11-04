@@ -1,6 +1,16 @@
 import torch
 import os
 
+def noise_generation(batch_size, latent_dim):
+    """
+    Generate random noise vector z.
+    
+    :param batch_size: Number of samples to generate
+    :param latent_dim: Dimension of the latent space
+    :return: Random noise vector z
+    """
+    z = torch.randn(batch_size, latent_dim).cuda()
+    return z
 
 
 def D_train(x, G, D, D_optimizer, criterion):
@@ -29,7 +39,7 @@ def D_train(x, G, D, D_optimizer, criterion):
     D_loss.backward()
     D_optimizer.step()
         
-    return  D_loss.data.item()
+    return D_loss.data.item(), D_real_score.mean().data.item(), D_fake_score.mean().data.item()
 
 
 def G_train(x, G, D, G_optimizer, criterion):
@@ -50,7 +60,6 @@ def G_train(x, G, D, G_optimizer, criterion):
     return G_loss.data.item()
 
 
-
 def save_models(G, D, folder):
     torch.save(G.state_dict(), os.path.join(folder,'G.pth'))
     torch.save(D.state_dict(), os.path.join(folder,'D.pth'))
@@ -60,8 +69,6 @@ def load_model(G, folder):
     ckpt = torch.load(os.path.join(folder,'G.pth'))
     G.load_state_dict({k.replace('module.', ''): v for k, v in ckpt.items()})
     return G
-
-
 
 
 
@@ -109,7 +116,6 @@ def G_train_perceptual(x, G, D, G_optimizer, criterion, perceptual_loss_fn):
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-import numpy as np
 import datetime
 
 def observe_latent_space(G, n_samples=100, method='pca'):
@@ -164,7 +170,7 @@ def observe_latent_space(G, n_samples=100, method='pca'):
 
 # ================== (Second) function to Observe the latent space with according label colours ==================
 
-def observe_latent_space_color(G, dataloader, n_samples=100, method='pca'):
+def observe_latent_space_color(G, latent_dim, n_samples=100, method='pca'):
     """
     Observe the latent space embeddings of the Generator and color them by MNIST labels.
     
@@ -176,40 +182,20 @@ def observe_latent_space_color(G, dataloader, n_samples=100, method='pca'):
     """
     G.eval()  # Set generator to evaluation mode
 
-    # Extract real images and labels from MNIST dataset
-    images = []
-    labels = []
-
-    # Collect enough images from the dataloader to reach `n_samples`
-    for batch_images, batch_labels in dataloader:
-        images.append(batch_images)
-        labels.append(batch_labels)
-        
-        # Stop when we've collected enough samples
-        if len(torch.cat(images)) >= n_samples:
-            break
-
-    # Stack images and labels into single tensors
-    images = torch.cat(images)[:n_samples].view(n_samples, -1).cuda()
-    labels = torch.cat(labels)[:n_samples].cpu().numpy()  # Ensure labels are numpy for plotting
-
-
     # Generate latent vectors (random noise z) based on real data
     with torch.no_grad():
-        z = torch.randn(n_samples, 100).cuda()  # latent space dimension
+        z = noise_generation(n_samples, latent_dim)  # latent space dimension
         generated_images = G(z).cpu().numpy()
 
-    # Flatten the generated images for dimensionality reduction (if needed)
-    flattened_images = generated_images.reshape(n_samples, -1)
-
+    z = z.cpu().numpy()
     # Apply dimensionality reduction (PCA or t-SNE)
     if method == 'pca':
         pca = PCA(n_components=2)
-        reduced_latent = pca.fit_transform(flattened_images)
+        reduced_latent = pca.fit_transform(z)
         title = "PCA of Latent Space"
     elif method == 'tsne':
         tsne = TSNE(n_components=2, learning_rate='auto', init='random')
-        reduced_latent = tsne.fit_transform(flattened_images)
+        reduced_latent = tsne.fit_transform(z)
         title = "t-SNE of Latent Space"
     else:
         raise ValueError("Invalid method. Choose 'pca' or 'tsne'.")
@@ -224,7 +210,7 @@ def observe_latent_space_color(G, dataloader, n_samples=100, method='pca'):
     plt.grid(True)
 
     # Save the plot
-    os.makedirs('latent space plots', exist_ok=True)
-    date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    plt.savefig(f'latent_space_plots/latent_space_{date}.png')
-    print(f"Latent space plot saved as latent_space_plots/latent_space_{date}.png")
+    os.makedirs('images/latent_space_plots', exist_ok=True)
+    date = datetime.datetime.now().strftime("%m-%d_%H-%M")
+    plt.savefig(f'images/latent_space_plots/latent_dim_{latent_dim}_{date}.png')
+    print(f"Latent space plot saved as images/latent_space_plots/latent_dim_{latent_dim}_{date}.png")
