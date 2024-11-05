@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import os
 import datetime
 import numpy as np
+from torchvision.utils import make_grid, save_image
 
 def load_model(G, classifier, folder):
     ckpt = torch.load(os.path.join(folder,'G.pth'))
@@ -14,6 +15,23 @@ def load_model(G, classifier, folder):
     ckpt = torch.load(os.path.join(folder,'classifier.pth'))
     classifier.load_state_dict({k.replace('module.', ''): v for k, v in ckpt.items()})
     return G, classifier
+
+def visualize_difference(generator, latent_vectors, original_noise, n_samples):
+    """
+    Visualize the difference between original and optimized latent vectors
+    """
+    z_vis = np.stack([latent_vectors[i:i+16, :] for i in range(0, n_samples, n_samples//10)], axis=0)
+    z_vis = torch.from_numpy(z_vis).cuda()
+    with torch.no_grad():
+        grid = make_grid(generator(z_vis).view(-1, 1, 28, 28).cpu(), nrow=12, normalize=True)
+        save_image(grid, f'images/predictions/new_pred.png')
+        
+    original_z_vis = np.stack([original_noise[i:i+16, :] for i in range(0, n_samples, n_samples//10)], axis=0)
+    original_z_vis = torch.from_numpy(original_z_vis).cuda()
+    with torch.no_grad():
+        grid = make_grid(generator(original_z_vis).view(-1, 1, 28, 28).cpu(), nrow=12, normalize=True)
+        save_image(grid, f'images/predictions/original_pred.png')
+    
 
 def analyze_latent_space(generator, classifier, latent_dim, n_samples=1000, lr=0.01, n_steps=100):
     """
@@ -71,13 +89,6 @@ def analyze_latent_space(generator, classifier, latent_dim, n_samples=1000, lr=0
     final_z = torch.cat(z_list, dim=0)
     labels = np.array(label_list)
     original_noise = np.concatenate(original_z, axis=0)
-    
-    # Generate final images and verify classifications
-    # with torch.no_grad():
-    #     final_images = generator(final_z)
-    #     final_predictions = classifier(final_images)
-    #     predicted_labels = torch.argmax(final_predictions, dim=1).cpu().numpy()
-    #     confidences = torch.max(final_predictions, dim=1)[0].cpu().numpy()
         
     return final_z.cpu().numpy(), labels, original_noise
 
