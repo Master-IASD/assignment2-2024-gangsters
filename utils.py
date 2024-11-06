@@ -1,5 +1,7 @@
 import torch
 import os
+import numpy as np
+from torch.autograd import grad as torch_grad
 
 def noise_generation(batch_size, latent_dim):
     """
@@ -11,6 +13,75 @@ def noise_generation(batch_size, latent_dim):
     """
     z = torch.randn(batch_size, latent_dim).cuda()
     return z
+
+def sample_z(shape=64, latent_dim=10, n_c=10, fix_class=-1, req_grad=False):
+
+    assert (fix_class == -1 or (fix_class >= 0 and fix_class < n_c) ), "Requested class %i outside bounds."%fix_class
+
+    Tensor = torch.cuda.FloatTensor
+    
+    # Sample noise as generator input, zn
+    zn = Tensor(0.75*np.random.normal(0, 1, (shape, latent_dim)))
+
+    ######### zc, zc_idx variables with grads, and zc to one-hot vector
+    # Pure one-hot vector generation
+    zc_FT = Tensor(shape, n_c).fill_(0)
+    zc_idx = torch.empty(shape, dtype=torch.long)
+
+    if (fix_class == -1):
+        zc_idx = zc_idx.random_(n_c).cuda()
+        zc_FT = zc_FT.scatter_(1, zc_idx.unsqueeze(1), 1.)
+        #zc_idx = torch.empty(shape, dtype=torch.long).random_(n_c).cuda()
+        #zc_FT = Tensor(shape, n_c).fill_(0).scatter_(1, zc_idx.unsqueeze(1), 1.)
+    else:
+        zc_idx[:] = fix_class
+        zc_FT[:, fix_class] = 1
+
+        zc_idx = zc_idx.cuda()
+        zc_FT = zc_FT.cuda()
+
+    zc = zc_FT
+
+    ## Gaussian-noisey vector generation
+    #zc = Variable(Tensor(np.random.normal(0, 1, (shape, n_c))), requires_grad=req_grad)
+    #zc = softmax(zc)
+    #zc_idx = torch.argmax(zc, dim=1)
+
+    # Return components of latent space variable
+    return zn, zc, zc_idx
+
+def calc_gradient_penalty(netD, real_data, generated_data):
+    # GP strength
+    LAMBDA = 10
+
+    b_size = real_data.size()[0]
+
+    # Calculate interpolation
+    alpha = torch.rand(b_size, 1, 1, 1)
+    alpha = alpha.expand_as(real_data)
+    alpha = alpha.cuda()
+    
+    interpolated = alpha * real_data.data + (1 - alpha) * generated_data.data
+    interpolated = interpolated.cuda()
+
+    # Calculate probability of interpolated examples
+    prob_interpolated = netD(interpolated)
+
+    # Calculate gradients of probabilities with respect to examples
+    gradients = torch_grad(outputs=prob_interpolated, inputs=interpolated,
+                           grad_outputs=torch.ones(prob_interpolated.size()).cuda(),
+                           create_graph=True, retain_graph=True)[0]
+
+    # Gradients have shape (batch_size, num_channels, img_width, img_height),
+    # so flatten to easily take norm per example in batch
+    gradients = gradients.view(b_size, -1)
+
+    # Derivatives of the gradient close to 0 can cause problems because of
+    # the square root, so manually calculate norm and add epsilon
+    gradients_norm = torch.sqrt(torch.sum(gradients ** 2, dim=1) + 1e-12)
+
+    # Return gradient penalty
+    return LAMBDA * ((gradients_norm - 1) ** 2).mean()
 
 
 def D_train(x, G, D, D_optimizer, criterion):
@@ -60,7 +131,9 @@ def G_train(x, G, D, G_optimizer, criterion):
     return G_loss.data.item()
 
 
-def save_models(G, D, folder):
+def save_models(G, D, E=None, folder=None):
+    if E:
+        torch.save(E.state_dict(), os.path.join(folder,'E.pth'))
     torch.save(G.state_dict(), os.path.join(folder,'G.pth'))
     torch.save(D.state_dict(), os.path.join(folder,'D.pth'))
 
