@@ -80,7 +80,7 @@ if __name__ == '__main__':
     ge_chain = ichain(generator.parameters(),
                       encoder.parameters())
     optimizer_GE = torch.optim.Adam(ge_chain, lr=1e-3, betas=(args.b1, args.b2), weight_decay=args.decay)
-    optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=3e-4, betas=(args.b1, args.b2))
+    optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=1e-4, betas=(args.b1, args.b2))
 
     ge_l = []
     d_l = []
@@ -233,6 +233,6 @@ if __name__ == '__main__':
                                                               lat_mse_loss.item(), 
                                                               lat_xe_loss.item())
              )
-
-    # Save final models after training completes
-    save_models(generator, discriminator, encoder, ckpt_dir)
+        if epoch % 10 == 0:
+            # Save models
+            save_models(generator, discriminator, encoder, ckpt_dir, epoch)

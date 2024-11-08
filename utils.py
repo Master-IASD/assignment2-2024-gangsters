@@ -21,7 +21,7 @@ def sample_z(shape=64, latent_dim=10, n_c=10, fix_class=-1, req_grad=False):
     Tensor = torch.cuda.FloatTensor
     
     # Sample noise as generator input, zn
-    zn = Tensor(0.75*np.random.normal(0, 1, (shape, latent_dim)))
+    zn = Tensor(0.9*np.random.normal(0, 1, (shape, latent_dim)))
 
     ######### zc, zc_idx variables with grads, and zc to one-hot vector
     # Pure one-hot vector generation
@@ -131,11 +131,11 @@ def G_train(x, G, D, G_optimizer, criterion):
     return G_loss.data.item()
 
 
-def save_models(G, D, E=None, folder=None):
+def save_models(G, D, E=None, folder=None,epoch=None):
     if E:
-        torch.save(E.state_dict(), os.path.join(folder,'E.pth'))
-    torch.save(G.state_dict(), os.path.join(folder,'G.pth'))
-    torch.save(D.state_dict(), os.path.join(folder,'D.pth'))
+        torch.save(E.state_dict(), os.path.join(folder,f'E{epoch}.pth'))
+    torch.save(G.state_dict(), os.path.join(folder,f'G{epoch}.pth'))
+    torch.save(D.state_dict(), os.path.join(folder,f'D{epoch}.pth'))
 
 
 def load_model(G, folder):

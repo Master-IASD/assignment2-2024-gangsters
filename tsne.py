@@ -27,7 +27,7 @@ def main():
     # TSNE setup
     n_samples = args.n_samples
     perplexity = args.perplexity
-    imgs_dir = 'images/latent'
+    imgs_dir = 'checkpoints' + str(args.latent_dim)
     
     if args.wass_metric:
         ckpt_dir = 'checkpointsGAN'
@@ -59,16 +59,16 @@ def main():
         tsne = TSNE(n_components=2, verbose=1, init='pca', random_state=0)
         fig_title = "PCA Initialization"
         if args.wass_metric:
-            figname = os.path.join(imgs_dir, 'tsne-pca-wass-%i.png'%args.latent_dim)
+            figname = os.path.join(imgs_dir, 'tsne-pca-wass.png')
         else:
-            figname = os.path.join(imgs_dir, 'tsne-pca-%i.png'%args.latent_dim)
+            figname = os.path.join(imgs_dir, 'tsne-pca.png')
     else:
         tsne = TSNE(n_components=2, verbose=1, perplexity=perplexity, n_iter=300)
         fig_title = "Perplexity = $%d$"%perplexity
         if args.wass_metric:
-            figname = os.path.join(imgs_dir, 'tsne-plex%i-wass-%i.png'%(args.latent_dim, perplexity))
+            figname = os.path.join(imgs_dir, 'tsne-plex-wass-%i.png'%perplexity)
         else:
-            figname = os.path.join(imgs_dir, 'tsne-plex%i-%i.png'%(args.latent_dim,perplexity))
+            figname = os.path.join(imgs_dir, 'tsne-plex%i.png'%perplexity)
 
     full_enc = []
     full_labels = []
@@ -153,7 +153,7 @@ def main():
     plt.title(f'Latent Space Clustering with TSNE and GMM')
     plt.xlabel("Component 1")
     plt.ylabel("Component 2")
-    plt.savefig(f'images/latent/gmm-{args.latent_dim}.png')
+    plt.savefig(f'{imgs_dir}/gmm.png')
     
     curves = means[:, -10:]
 
@@ -178,7 +178,7 @@ def main():
                 used_indices.add(idx)               # Mark this index as used
                 break
     
-    np.savez("checkpoints/gmm_parameters.npz", means=gmm.means_, covariances=gmm.covariances_, clusters=list(final_max_indices.values()), latent_dim=args.latent_dim)
+    np.savez(f"checkpoints{args.latent_dim}/gmm_parameters.npz", means=gmm.means_, covariances=gmm.covariances_, clusters=list(final_max_indices.values()), latent_dim=args.latent_dim)
     print("GMM parameters saved to checkpoints/gmm_parameters.npz")
     
 if __name__ == "__main__":
