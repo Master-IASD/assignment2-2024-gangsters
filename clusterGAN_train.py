@@ -31,17 +31,23 @@ if __name__ == '__main__':
                         help="Use Wasserstein metric for GAN loss")
 
     args = parser.parse_args()
-    torch.cuda.set_device(2)
+    torch.cuda.set_device(0)
+    torch.cuda.empty_cache()
     print("device", torch.cuda.current_device())
     
-    os.makedirs('checkpoints', exist_ok=True)
+    if args.wass_metric:
+        imgs_dir = 'images/trainGAN' + str(args.latent_dim)
+        ckpt_dir = 'checkpointsGAN' + str(args.latent_dim)
+    else:
+        imgs_dir = 'images/train' + str(args.latent_dim)
+        ckpt_dir = 'checkpoints' + str(args.latent_dim)
     os.makedirs('data', exist_ok=True)
-    os.makedirs('images/predictions', exist_ok=True)
-    os.makedirs('images/train', exist_ok=True)
+    os.makedirs(ckpt_dir, exist_ok=True)
+    os.makedirs(imgs_dir, exist_ok=True)
     
     betan = 10
     betac = 10
-    imgs_dir = 'images/train'
+    
 
     # MNIST Dataset
     transform = transforms.Compose([
@@ -73,8 +79,8 @@ if __name__ == '__main__':
     # Optimizers
     ge_chain = ichain(generator.parameters(),
                       encoder.parameters())
-    optimizer_GE = torch.optim.Adam(ge_chain, lr=args.lr, betas=(args.b1, args.b2), weight_decay=args.decay)
-    optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=args.lr, betas=(args.b1, args.b2))
+    optimizer_GE = torch.optim.Adam(ge_chain, lr=1e-3, betas=(args.b1, args.b2), weight_decay=args.decay)
+    optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=3e-4, betas=(args.b1, args.b2))
 
     ge_l = []
     d_l = []
@@ -147,7 +153,7 @@ if __name__ == '__main__':
             # Measure discriminator's ability to classify real from generated samples
             if args.wass_metric:
                 # Gradient penalty term
-                grad_penalty = calc_gradient_penalty(discriminator, real_imgs, gen_imgs)
+                grad_penalty = calc_gradient_penalty(discriminator, real_imgs, gen_imgs.view(-1, 1, 28, 28))
 
                 # Wasserstein GAN loss w/gradient penalty
                 d_loss = torch.mean(D_real) - torch.mean(D_gen) + grad_penalty
@@ -229,4 +235,4 @@ if __name__ == '__main__':
              )
 
     # Save final models after training completes
-    save_models(generator, discriminator, encoder, 'checkpoints')
+    save_models(generator, discriminator, encoder, ckpt_dir)

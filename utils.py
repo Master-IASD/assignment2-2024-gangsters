@@ -61,11 +61,11 @@ def calc_gradient_penalty(netD, real_data, generated_data):
     alpha = alpha.expand_as(real_data)
     alpha = alpha.cuda()
     
-    interpolated = alpha * real_data.data + (1 - alpha) * generated_data.data
+    interpolated = alpha * real_data + (1 - alpha) * generated_data
     interpolated = interpolated.cuda()
 
     # Calculate probability of interpolated examples
-    prob_interpolated = netD(interpolated)
+    prob_interpolated = netD(interpolated.view(b_size, -1))
 
     # Calculate gradients of probabilities with respect to examples
     gradients = torch_grad(outputs=prob_interpolated, inputs=interpolated,
