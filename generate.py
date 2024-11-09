@@ -11,13 +11,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate Normalizing Flow.')
     parser.add_argument("--batch_size", type=int, default=2048,
                       help="The batch size to use for training.")
-    parser.add_argument("-d", "--latent_dim", default=None, type=int)
+    parser.add_argument("-d", "--dim", default=None, type=int)
     args = parser.parse_args()
 
-    if args.latent_dim is None:
-        gmm_params = np.load(f"checkpoints/gmm_parameters.npz")
-    else:
-        gmm_params = np.load(f"checkpoints{args.latent_dim}/gmm_parameters.npz")
+    if args.dim== None:
+        args.dim = ""
+
+    gmm_params = np.load(f"checkpoints{args.dim}/gmm_parameters.npz")
     # Access the parameters
     means = gmm_params["means"][:,:-10]
     covariances = gmm_params["covariances"][:,:-10,:-10]
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     mnist_dim = 784
 
     model = Generator(latent_dim + 10, g_output_dim = mnist_dim).cuda()
-    model = load_model(model, f'checkpoints{args.latent_dim}')
+    model = load_model(model, f'checkpoints{args.dim}')
     model = torch.nn.DataParallel(model).cuda()
     model.eval()
 
