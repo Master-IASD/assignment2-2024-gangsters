@@ -4,5 +4,10 @@ data/
 samples/
 *.vscode/
 __pycache__/
-
+images/
+latent_space_plots/
+__init__.py
+checkpoints*/
+!checkpoints/
 real_images/
+*.ipynb
