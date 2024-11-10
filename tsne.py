@@ -21,18 +21,20 @@ def main():
     parser.add_argument("-p", "--perplexity", dest="perplexity", default=-1, type=int,  help="TSNE perplexity")
     parser.add_argument("-n", "--n_samples", dest="n_samples", default=10000, type=int,  help="Number of samples")
     parser.add_argument("-d", "--latent_dim", default=100, type=int)
+    parser.add_argument("--epoch", default=100, type=int)
     parser.add_argument("--wass_metric", type=bool, default=False)
+    parser.add_argument("--name", type=str, default="")
     args = parser.parse_args()
 
     # TSNE setup
     n_samples = args.n_samples
     perplexity = args.perplexity
-    imgs_dir = 'checkpoints' + str(args.latent_dim)
+    imgs_dir = 'checkpoints' + str(args.latent_dim) + args.name
     
     if args.wass_metric:
         ckpt_dir = 'checkpointsGAN'
     else:
-        ckpt_dir = 'checkpoints' + str(args.latent_dim)
+        ckpt_dir = 'checkpoints' + str(args.latent_dim) + args.name
         
     os.makedirs(imgs_dir, exist_ok=True)
 
@@ -41,7 +43,7 @@ def main():
     
     # Load encoder model
     encoder = Encoder_CNN(args.latent_dim, n_c).cuda()
-    ckpt = torch.load(os.path.join(ckpt_dir,'E.pth'))
+    ckpt = torch.load(os.path.join(ckpt_dir,'E' +f'{args.epoch}.pth'))
     encoder.load_state_dict({k.replace('module.', ''): v for k, v in ckpt.items()})
     encoder.eval()
 
@@ -178,7 +180,7 @@ def main():
                 used_indices.add(idx)               # Mark this index as used
                 break
     
-    np.savez(f"checkpoints{args.latent_dim}/gmm_parameters.npz", means=gmm.means_, covariances=gmm.covariances_, clusters=list(final_max_indices.values()), latent_dim=args.latent_dim)
+    np.savez(f"checkpoints{args.latent_dim}{args.name}/gmm_parameters.npz", means=gmm.means_, covariances=gmm.covariances_, clusters=list(final_max_indices.values()), latent_dim=args.latent_dim)
     print("GMM parameters saved to checkpoints/gmm_parameters.npz")
     
 if __name__ == "__main__":

@@ -11,13 +11,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate Normalizing Flow.')
     parser.add_argument("--batch_size", type=int, default=2048,
                       help="The batch size to use for training.")
+    parser.add_argument("--epoch", type=str, default="")
     parser.add_argument("-d", "--dim", default=None, type=int)
+    parser.add_argument("--name", default="", type=str)
     args = parser.parse_args()
 
     if args.dim== None:
         args.dim = ""
 
-    gmm_params = np.load(f"checkpoints{args.dim}/gmm_parameters.npz")
+    gmm_params = np.load(f"checkpoints{args.dim}{args.name}/gmm_parameters.npz")
     # Access the parameters
     means = gmm_params["means"][:,:-10]
     covariances = gmm_params["covariances"][:,:-10,:-10]
@@ -29,7 +31,7 @@ if __name__ == '__main__':
     mnist_dim = 784
 
     model = Generator(latent_dim + 10, g_output_dim = mnist_dim).cuda()
-    model = load_model(model, f'checkpoints{args.dim}')
+    model = load_model(model, f'checkpoints{args.dim}{args.name}', args.epoch)
     model = torch.nn.DataParallel(model).cuda()
     model.eval()
 
@@ -50,7 +52,11 @@ if __name__ == '__main__':
         # Convert to tensor and move to device
         latent_vectors = torch.tensor(latent_vectors, dtype=torch.float32).cuda()
         one_hot = torch.zeros((latent_vectors.shape[0], 10)).cuda()
-        one_hot[:,clusters[cluster]] = 1
+        one_hot[:200,clusters[cluster]] = 0.8
+        one_hot[200:400,clusters[cluster]] = 0.9
+        one_hot[400:600,clusters[cluster]] = 1
+        one_hot[600:800,clusters[cluster]] = 1.1
+        one_hot[800:1000,clusters[cluster]] = 1.2
         latent_vectors = torch.cat((latent_vectors, one_hot), dim=1)
 
         # Generate samples using the generator

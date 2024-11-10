@@ -21,7 +21,7 @@ def sample_z(shape=64, latent_dim=10, n_c=10, fix_class=-1, req_grad=False):
     Tensor = torch.cuda.FloatTensor
     
     # Sample noise as generator input, zn
-    zn = Tensor(0.9*np.random.normal(0, 1, (shape, latent_dim)))
+    zn = Tensor(0.8*np.random.normal(0, 1, (shape, latent_dim)))
 
     ######### zc, zc_idx variables with grads, and zc to one-hot vector
     # Pure one-hot vector generation
@@ -138,8 +138,8 @@ def save_models(G, D, E=None, folder=None,epoch=None):
     torch.save(D.state_dict(), os.path.join(folder,f'D{epoch}.pth'))
 
 
-def load_model(G, folder):
-    ckpt = torch.load(os.path.join(folder,'G.pth'))
+def load_model(G, folder,epoch):
+    ckpt = torch.load(os.path.join(folder,'G'+ epoch + '.pth'))
     G.load_state_dict({k.replace('module.', ''): v for k, v in ckpt.items()})
     return G
 

@@ -11,7 +11,7 @@ from utils import sample_z, save_models, calc_gradient_penalty
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train Normalizing Flow.')
-    parser.add_argument("--epochs", type=int, default=100,
+    parser.add_argument("--epochs", type=int, default=101,
                         help="Number of epochs for training.")
     parser.add_argument("--lr", type=float, default=0.0002,
                       help="The learning rate to use for training.")
@@ -29,6 +29,7 @@ if __name__ == '__main__':
                         help="Number of iterations to train GE for each D iteration")
     parser.add_argument("--wass_metric", type=bool, default=False,
                         help="Use Wasserstein metric for GAN loss")
+    parser.add_argument("--name", type=str, default= "")
 
     args = parser.parse_args()
     torch.cuda.set_device(0)
@@ -39,8 +40,8 @@ if __name__ == '__main__':
         imgs_dir = 'images/trainGAN' + str(args.latent_dim)
         ckpt_dir = 'checkpointsGAN' + str(args.latent_dim)
     else:
-        imgs_dir = 'images/train' + str(args.latent_dim)
-        ckpt_dir = 'checkpoints' + str(args.latent_dim)
+        imgs_dir = 'images/train' + str(args.latent_dim) + args.name
+        ckpt_dir = 'checkpoints' + str(args.latent_dim) + args.name
     os.makedirs('data', exist_ok=True)
     os.makedirs(ckpt_dir, exist_ok=True)
     os.makedirs(imgs_dir, exist_ok=True)
