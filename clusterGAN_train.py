@@ -11,7 +11,7 @@ from utils import sample_z, save_models, calc_gradient_penalty
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train Normalizing Flow.')
-    parser.add_argument("--epochs", type=int, default=101,
+    parser.add_argument("--epochs", type=int, default=251,
                         help="Number of epochs for training.")
     parser.add_argument("--lr", type=float, default=0.0002,
                       help="The learning rate to use for training.")
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     parser.add_argument("--name", type=str, default= "")
 
     args = parser.parse_args()
-    torch.cuda.set_device(0)
+    torch.cuda.set_device(1)
     torch.cuda.empty_cache()
     print("device", torch.cuda.current_device())
     
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     ge_chain = ichain(generator.parameters(),
                       encoder.parameters())
     optimizer_GE = torch.optim.Adam(ge_chain, lr=1e-3, betas=(args.b1, args.b2), weight_decay=args.decay)
-    optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=1e-4, betas=(args.b1, args.b2))
+    optimizer_D = torch.optim.Adam(discriminator.parameters(), lr=3e-4, betas=(args.b1, args.b2))
 
     ge_l = []
     d_l = []

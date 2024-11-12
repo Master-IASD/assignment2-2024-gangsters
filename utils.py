@@ -3,14 +3,24 @@ import os
 import numpy as np
 from torch.autograd import grad as torch_grad
 
-def noise_generation(batch_size, latent_dim):
+def z_generation(samples, latent_dim):
     """
-    Generate random noise vector z.
+    Generate random noise vector z with 10 categorical sampled from gaussian centered to have value near 1.1 with std 0,1.
     
     :param batch_size: Number of samples to generate
     :param latent_dim: Dimension of the latent space
     :return: Random noise vector z
     """
+    z = torch.normal(mean=0, std=1, size=(samples, latent_dim)) * 0.75
+    zc = torch.zeros(samples, 10)
+    zc_value = torch.normal(mean=1.1, std=0.15, size=(samples,))
+    for i in range(10):
+        # zc[i*samples//10:(i+1)*samples//10, i] = zc_value[i*samples//10:(i+1)*samples//10]
+        zc[i*samples//10:(i+1)*samples//10, i] = 1
+    z = torch.cat((z, zc), dim=1)
+    return z
+
+def noise_generation(batch_size, latent_dim):
     z = torch.randn(batch_size, latent_dim).cuda()
     return z
 
@@ -21,7 +31,7 @@ def sample_z(shape=64, latent_dim=10, n_c=10, fix_class=-1, req_grad=False):
     Tensor = torch.cuda.FloatTensor
     
     # Sample noise as generator input, zn
-    zn = Tensor(0.8*np.random.normal(0, 1, (shape, latent_dim)))
+    zn = Tensor(0.75*np.random.normal(0, 1, (shape, latent_dim)))
 
     ######### zc, zc_idx variables with grads, and zc to one-hot vector
     # Pure one-hot vector generation
@@ -97,7 +107,7 @@ def D_train(x, G, D, D_optimizer, criterion):
     D_real_score = D_output
 
     # train discriminator on facke
-    z = torch.randn(x.shape[0], 100).cuda()
+    z = torch.randn(x.shape[0], 20).cuda()
     x_fake, y_fake = G(z), torch.zeros(x.shape[0], 1).cuda()
 
     D_output =  D(x_fake)
@@ -117,7 +127,7 @@ def G_train(x, G, D, G_optimizer, criterion):
     #=======================Train the generator=======================#
     G.zero_grad()
 
-    z = torch.randn(x.shape[0], 100).cuda()
+    z = torch.randn(x.shape[0], 20).cuda()
     y = torch.ones(x.shape[0], 1).cuda()
                  
     G_output = G(z)
@@ -131,14 +141,14 @@ def G_train(x, G, D, G_optimizer, criterion):
     return G_loss.data.item()
 
 
-def save_models(G, D, E=None, folder=None,epoch=None):
+def save_models(G, D, E=None, folder=None, epoch=None):
     if E:
         torch.save(E.state_dict(), os.path.join(folder,f'E{epoch}.pth'))
     torch.save(G.state_dict(), os.path.join(folder,f'G{epoch}.pth'))
     torch.save(D.state_dict(), os.path.join(folder,f'D{epoch}.pth'))
 
 
-def load_model(G, folder,epoch):
+def load_model(G, folder, epoch = ""):
     ckpt = torch.load(os.path.join(folder,'G'+ epoch + '.pth'))
     G.load_state_dict({k.replace('module.', ''): v for k, v in ckpt.items()})
     return G

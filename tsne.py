@@ -21,7 +21,7 @@ def main():
     parser.add_argument("-p", "--perplexity", dest="perplexity", default=-1, type=int,  help="TSNE perplexity")
     parser.add_argument("-n", "--n_samples", dest="n_samples", default=10000, type=int,  help="Number of samples")
     parser.add_argument("-d", "--latent_dim", default=100, type=int)
-    parser.add_argument("--epoch", default=100, type=int)
+    parser.add_argument("--epoch", default="", type=str)
     parser.add_argument("--wass_metric", type=bool, default=False)
     parser.add_argument("--name", type=str, default="")
     args = parser.parse_args()
@@ -43,7 +43,7 @@ def main():
     
     # Load encoder model
     encoder = Encoder_CNN(args.latent_dim, n_c).cuda()
-    ckpt = torch.load(os.path.join(ckpt_dir,'E' +f'{args.epoch}.pth'))
+    ckpt = torch.load(os.path.join(ckpt_dir,'E' + args.epoch+ '.pth'))
     encoder.load_state_dict({k.replace('module.', ''): v for k, v in ckpt.items()})
     encoder.eval()
 
@@ -66,7 +66,7 @@ def main():
             figname = os.path.join(imgs_dir, 'tsne-pca.png')
     else:
         tsne = TSNE(n_components=2, verbose=1, perplexity=perplexity, n_iter=300)
-        fig_title = "Perplexity = $%d$"%perplexity
+        fig_title = "TSNE Perplexity = $%d$"%perplexity
         if args.wass_metric:
             figname = os.path.join(imgs_dir, 'tsne-plex-wass-%i.png'%perplexity)
         else:

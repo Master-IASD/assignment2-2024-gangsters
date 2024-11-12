@@ -33,6 +33,56 @@ class Discriminator(nn.Module):
         x = F.leaky_relu(self.fc2(x), 0.2)
         x = F.leaky_relu(self.fc3(x), 0.2)
         return torch.sigmoid(self.fc4(x))
+
+# class Generator(nn.Module):
+#     def __init__(self, g_input_dim, g_output_dim):
+#         super(Generator, self).__init__()
+#         self.latent_dim = g_input_dim
+
+#         self.model = nn.Sequential(
+#             # Input: latent_dim x 1 x 1
+#             nn.ConvTranspose2d(g_input_dim, 128, kernel_size=7, stride=1, padding=0, bias=False),
+#             nn.BatchNorm2d(128),
+#             nn.ReLU(True),
+#             # Output: 128 x 7 x 7
+
+#             nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1, bias=False),
+#             nn.BatchNorm2d(64),
+#             nn.ReLU(True),
+#             # Output: 64 x 14 x 14
+
+#             nn.ConvTranspose2d(64, 1, kernel_size=4, stride=2, padding=1, bias=False),
+#             nn.Tanh()
+#             # Output: 1 x 28 x 28
+#         )
+
+#     def forward(self, x):
+#         x = x.view(x.size(0), self.latent_dim, 1, 1)  # Reshape to (batch_size, latent_dim, 1, 1)
+#         return self.model(x)
+    
+# class Discriminator(nn.Module):
+#     def __init__(self, d_input_dim):
+#         super(Discriminator, self).__init__()
+
+#         self.model = nn.Sequential(
+#             # Input: 1 x 28 x 28
+#             nn.Conv2d(1, 64, kernel_size=4, stride=2, padding=1, bias=False),
+#             nn.LeakyReLU(0.2, inplace=True),
+#             # Output: 64 x 14 x 14
+
+#             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1, bias=False),
+#             nn.BatchNorm2d(128),
+#             nn.LeakyReLU(0.2, inplace=True),
+#             # Output: 128 x 7 x 7
+
+#             nn.Flatten(),
+#             nn.Linear(128 * 7 * 7, 1),
+#             nn.Sigmoid()  # Outputs a probability
+#         )
+
+#     def forward(self, x):
+#         x = x.view(x.size(0), 1, 28, 28)  # Reshape to (batch_size, 1, 28, 28)
+#         return self.model(x)
     
 def initialize_weights(net):
     for m in net.modules():
