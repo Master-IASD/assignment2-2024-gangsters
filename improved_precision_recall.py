@@ -39,7 +39,7 @@ class IPR():
         self.num_samples = num_samples
         if model is None:
             print('loading vgg16 for improved precision and recall...', end='', flush=True)
-            self.vgg16 = models.vgg16(pretrained=True).cuda().eval()
+            self.vgg16 = models.vgg16(models.VGG16_Weights.DEFAULT).cuda().eval()
             print('done')
         else:
             self.vgg16 = model
@@ -357,7 +357,7 @@ if __name__ == '__main__':
     parser.add_argument('path_fake', type=str, help='Path to the fake images')
     parser.add_argument('--batch_size', type=int, default=50, help='Batch size to use')
     parser.add_argument('--k', type=int, default=3, help='Batch size to use')
-    parser.add_argument('--num_samples', type=int, default=5000, help='number of samples to use')
+    parser.add_argument('--num_samples', type=int, default=10000, help='number of samples to use')
     parser.add_argument('--toy', action='store_true')
     parser.add_argument('--fname_precalc', type=str, default='', help='fname for precalculating manifold')
     args = parser.parse_args()
