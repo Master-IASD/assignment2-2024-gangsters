@@ -5,7 +5,8 @@ import argparse
 
 
 from model import Generator
-from utils import load_model
+from utils import load_model, observe_latent_space
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate Normalizing Flow.')
@@ -19,6 +20,8 @@ if __name__ == '__main__':
     print('Model Loading...')
     # Model Pipeline
     mnist_dim = 784
+
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = Generator(g_output_dim = mnist_dim).cuda()
     model = load_model(model, 'checkpoints')
@@ -35,7 +38,7 @@ if __name__ == '__main__':
     n_samples = 0
     with torch.no_grad():
         while n_samples<10000:
-            z = torch.randn(args.batch_size, 100).cuda()
+            z = torch.randn(args.batch_size, 20).cuda()
             x = model(z)
             x = x.reshape(args.batch_size, 28, 28)
             for k in range(x.shape[0]):
@@ -45,3 +48,6 @@ if __name__ == '__main__':
 
     print('Generating Done.')
     
+
+# Observe the latent space embeddings of the Generator :
+# observe_latent_space(model, n_samples=1000, method='pca')

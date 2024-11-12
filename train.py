@@ -5,13 +5,18 @@ import argparse
 from torchvision import datasets, transforms
 import torch.nn as nn
 import torch.optim as optim
+from torchvision.utils import save_image, make_grid
 
 
 from model import Generator, Discriminator
 from utils import D_train, G_train, save_models
 
-# additional imports
+
+# ============= Additional imports ==============
 from PIL import Image
+from perceptual import PerceptualLoss
+from utils import G_train_perceptual
+
 
 
 if __name__ == '__main__':
@@ -26,7 +31,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
 
-    os.makedirs('chekpoints', exist_ok=True)
+    os.makedirs('checkpoints', exist_ok=True)
     os.makedirs('data', exist_ok=True)
 
     # Data Pipeline
@@ -62,11 +67,18 @@ if __name__ == '__main__':
     # define loss
     criterion = nn.BCELoss() 
 
+    # define perceptual loss
+    perceptual_loss_fn = PerceptualLoss() #.cuda()  
+
+    # Try training with the hinge losss
+    criterion2 = nn.HingeEmbeddingLoss()
+
+
     # define optimizers
     G_optimizer = optim.Adam(G.parameters(), lr = args.lr)
     D_optimizer = optim.Adam(D.parameters(), lr = args.lr)
 
-    print("device", torch.cuda.current_device())
+    # print("device", torch.cuda.current_device())
 
     print('Start Training :')
     
@@ -74,11 +86,21 @@ if __name__ == '__main__':
     for epoch in trange(1, n_epoch+1, leave=True):           
         for batch_idx, (x, _) in enumerate(train_loader):
             x = x.view(-1, mnist_dim)
-            D_train(x, G, D, D_optimizer, criterion)
-            G_train(x, G, D, G_optimizer, criterion)
+            D_train(x, G, D, D_optimizer, criterion2)
+
+            # === Classic Generator Training Function ===
+            # G_train(x, G, D, G_optimizer, criterion2)
+
+            # === Generator Training Function with Perceptual Loss ===
+            G_loss = G_train_perceptual(x, G, D, G_optimizer, criterion, perceptual_loss_fn)
+
+            with torch.no_grad():
+                z = torch.randn(16, 20).cuda()
+            grid = make_grid(G(z).view(-1, 1, 28, 28).cpu(), nrow=4, normalize=True)
+            save_image(grid, f"images/{epoch}.png")
 
         if epoch % 10 == 0:
-            save_models(G, D, 'checkpoints')
+            save_models(G, D, 'checkpoints', epoch)
                 
     print('Training done')
 

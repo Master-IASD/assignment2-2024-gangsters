@@ -16,7 +16,7 @@ def D_train(x, G, D, D_optimizer, criterion):
     D_real_score = D_output
 
     # train discriminator on facke
-    z = torch.randn(x.shape[0], 100).cuda()
+    z = torch.randn(x.shape[0], 20).cuda()
     x_fake, y_fake = G(z), torch.zeros(x.shape[0], 1).cuda()
 
     D_output =  D(x_fake)
@@ -51,9 +51,9 @@ def G_train(x, G, D, G_optimizer, criterion):
 
 
 
-def save_models(G, D, folder):
-    torch.save(G.state_dict(), os.path.join(folder,'G.pth'))
-    torch.save(D.state_dict(), os.path.join(folder,'D.pth'))
+def save_models(G, D, folder, epoch):
+    torch.save(G.state_dict(), os.path.join(folder,f'G{epoch}.pth'))
+    torch.save(D.state_dict(), os.path.join(folder,f'D{epoch}.pth'))
 
 
 def load_model(G, folder):
@@ -77,7 +77,7 @@ def G_train_perceptual(x, G, D, G_optimizer, criterion, perceptual_loss_fn):
     G_optimizer.zero_grad()
 
     # Sample random latent space vector
-    z = torch.randn(x.size(0), 100).cuda()
+    z = torch.randn(x.size(0), 20).cuda()
     y = torch.ones(x.shape[0], 1).cuda()
 
     # Generate fake images
@@ -152,7 +152,7 @@ def observe_latent_space(G, n_samples=100, method='pca'):
     # plt.show()
 
     # Directory of latent space plots
-    os.makedirs('latent space plots', exist_ok=True)
+    os.makedirs('latent_space_plots', exist_ok=True)
     # Saving the plot
     date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     plt.savefig(f'latent_space_plots/latent_space_{date}.png')
@@ -224,7 +224,7 @@ def observe_latent_space_color(G, dataloader, n_samples=100, method='pca'):
     plt.grid(True)
 
     # Save the plot
-    os.makedirs('latent space plots', exist_ok=True)
+    os.makedirs('latent_space_plots', exist_ok=True)
     date = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     plt.savefig(f'latent_space_plots/latent_space_{date}.png')
     print(f"Latent space plot saved as latent_space_plots/latent_space_{date}.png")

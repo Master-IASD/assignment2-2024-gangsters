@@ -4,5 +4,8 @@ data/
 samples/
 *.vscode/
 __pycache__/
+latent_space_plots/
+images/
 
 real_images/
+my_venv/
